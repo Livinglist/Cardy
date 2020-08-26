@@ -1,4 +1,4 @@
-# flash_card
+# Cardy
 
 A new Flutter application.
 
