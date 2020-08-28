@@ -1,18 +1,28 @@
 import 'dart:convert';
 
 import 'package:flash_card/resource/constants.dart';
+import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 import 'flash_card.dart';
 
-export 'flash_card.dart';
+part 'deck.g.dart';
 
-class Deck {
+@HiveType(typeId: 1)
+class Deck extends HiveObject {
+  @HiveField(0)
   String title;
+
+  @HiveField(1)
   final int timeStamp;
+
+  @HiveField(2)
   final List<FlashCard> cards;
+
+  @HiveField(3)
   final String uid;
 
-  Deck({this.cards, this.timeStamp, this.title, this.uid}) : assert(title != null);
+  Deck({this.cards, this.timeStamp, this.title, this.uid})
+      : assert(title != null);
 
   Deck.create({this.title})
       : assert(title != null),

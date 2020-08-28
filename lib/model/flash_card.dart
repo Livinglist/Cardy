@@ -1,10 +1,19 @@
 import 'dart:convert';
 
 import 'package:flash_card/resource/constants.dart';
+import 'package:hive/hive.dart';
 
-class FlashCard {
+part 'flash_card.g.dart';
+
+@HiveType(typeId: 0)
+class FlashCard extends HiveObject {
+  @HiveField(0)
   final String content;
+
+  @HiveField(1)
   final String title;
+
+  @HiveField(2)
   final int timeStamp;
 
   FlashCard({this.content, this.timeStamp, this.title}) : assert(title != null);

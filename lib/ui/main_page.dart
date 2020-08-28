@@ -18,126 +18,240 @@ class _MainPageState extends State<MainPage> {
   ];
 
   @override
+  void initState() {
+    DeckBloc.instance.getAllDecks();
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          elevation: 0,
-        ),
-        backgroundColor: Colors.black,
-        body: Column(
-          children: [
-            CustomCarouselSlider(),
-            Padding(
-              child: RaisedButton(
-                child: Icon(Icons.add),
-                onPressed: () {},
-                shape: StadiumBorder(),
-              ),
-              padding: EdgeInsets.all(12),
+      appBar: AppBar(
+        elevation: 0,
+      ),
+      backgroundColor: Colors.black,
+      body: Column(
+        children: [
+          StreamBuilder(
+            stream: DeckBloc.instance.deck,
+            builder: (_, AsyncSnapshot<Deck> snapshot) {
+              if (snapshot.hasData) {
+                return CustomCarouselSlider(cards: snapshot.data.cards);
+              }
+
+              return Center(
+                child: Text('No Deck Selected'),
+              );
+            },
+          ),
+          Padding(
+            child: RaisedButton(
+              child: Icon(Icons.add),
+              onPressed: onAddCardPressed,
+              shape: StadiumBorder(),
             ),
-            Spacer(),
-            Container(
-                width: double.infinity,
-                child: Padding(
-                  child: Wrap(
-                    alignment: WrapAlignment.start,
-                    children: [
-                      ...categories.map((e) {
-                        int index = int.parse(e.hashCode.toString()[0]);
+            padding: EdgeInsets.all(12),
+          ),
+          Spacer(),
+          Container(
+              width: double.infinity,
+              child: Padding(
+                child: StreamBuilder(
+                  stream: DeckBloc.instance.decks,
+                  builder: (_, AsyncSnapshot<List<Deck>> snapshot) {
+                    if (snapshot.hasData) {
+                      var decks = snapshot.data;
 
-                        List<Color> colors = [
-                          Colors.teal,
-                          Colors.orange,
-                          Colors.grey,
-                          Colors.redAccent,
-                          Colors.indigoAccent,
-                          Colors.cyan,
-                          Colors.pinkAccent,
-                          Colors.lightBlue,
-                          Colors.lightGreen,
-                          Colors.amber
-                        ];
+                      if (chipMap.isEmpty && decks.isNotEmpty) {
+                        chipMap[decks[0]] = true;
+                      }
 
-                        bool selected = chipMap[e] ?? false;
+                      return Wrap(
+                        alignment: WrapAlignment.start,
+                        children: [
+                          ...decks.map((e) {
+                            int index = int.tryParse(e.uid[0]) ?? 0;
 
-                        return FilterChip(
-                            selectedColor: colors.elementAt(index),
-                            backgroundColor: colors.elementAt(index).withOpacity(0.8),
-                            selected: selected,
-                            label: Text(e),
-                            onSelected: (val) {
-                              setState(() {
-                                chipMap.clear();
-                                chipMap[e] = val;
-                              });
-                            });
-                      }).toList(),
-                      ActionChip(
-                        label: Icon(Icons.add),
-                        onPressed: () {
-                          showGeneralDialog(
-                            barrierLabel: "Barrier",
-                            barrierDismissible: true,
-                            barrierColor: Colors.black.withOpacity(0.5),
-                            transitionDuration: Duration(milliseconds: 300),
-                            context: context,
-                            pageBuilder: (_, __, ___) {
-                              final textEditingController = TextEditingController();
-                              return Align(
-                                alignment: Alignment.topCenter,
-                                child: Container(
-                                  height: 360,
-                                  //child: SizedBox.expand(child: FlutterLogo()),
-                                  margin: EdgeInsets.only(top: 48, left: 12, right: 12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(40),
-                                  ),
-                                  child: Column(
-                                    children: <Widget>[
-                                      Padding(
-                                          padding: EdgeInsets.only(top: 12, left: 24, right: 24),
-                                          child: Material(
-                                            color: Colors.transparent,
-                                            child: RaisedButton(
-                                              child: Padding(
-                                                padding: EdgeInsets.only(top: 12, left: 24, right: 24, bottom: 12),
-                                                child: Text('Title', style: TextStyle(fontSize: 24, fontFamily: 'noto')),
-                                              ),
-                                              onPressed: () {
-                                                var title = textEditingController.text;
-                                                DeckBloc.instance.newDeck(title);
-                                              },
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(40),
-                                              ),
-                                            ),
-                                          ))
-                                    ],
-                                  ),
-                                ),
+                            List<Color> colors = [
+                              Colors.teal,
+                              Colors.orange,
+                              Colors.grey,
+                              Colors.redAccent,
+                              Colors.indigoAccent,
+                              Colors.cyan,
+                              Colors.pinkAccent,
+                              Colors.lightBlue,
+                              Colors.lightGreen,
+                              Colors.amber
+                            ];
+
+                            bool selected = chipMap[e] ?? false;
+
+                            return FilterChip(
+                                selectedColor: colors.elementAt(index),
+                                backgroundColor:
+                                    colors.elementAt(index).withOpacity(0.8),
+                                selected: selected,
+                                label: Text(e.title),
+                                onSelected: (val) {
+                                  setState(() {
+                                    if (val == true) {
+                                      chipMap.clear();
+                                      chipMap[e] = val;
+                                      DeckBloc.instance.selectDeck(e.uid);
+                                    }
+                                  });
+                                });
+                          }).toList(),
+                          ActionChip(
+                            label: Icon(Icons.add),
+                            onPressed: () {
+                              showGeneralDialog(
+                                barrierLabel: "Barrier",
+                                barrierDismissible: true,
+                                barrierColor: Colors.black.withOpacity(0.5),
+                                transitionDuration: Duration(milliseconds: 300),
+                                context: context,
+                                pageBuilder: (_, __, ___) {
+                                  final textEditingController =
+                                      TextEditingController();
+                                  return Align(
+                                    alignment: Alignment.topCenter,
+                                    child: Container(
+                                      height: 360,
+                                      //child: SizedBox.expand(child: FlutterLogo()),
+                                      margin: EdgeInsets.only(
+                                          top: 48, left: 12, right: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(40),
+                                      ),
+                                      child: Column(
+                                        children: <Widget>[
+                                          Padding(
+                                              padding: EdgeInsets.only(
+                                                  top: 12, left: 24, right: 24),
+                                              child: Material(
+                                                  color: Colors.transparent,
+                                                  child: TextField(
+                                                    controller:
+                                                        textEditingController,
+                                                    decoration: InputDecoration(
+                                                        labelText: 'Title'),
+                                                  ))),
+                                          Padding(
+                                              padding: EdgeInsets.only(
+                                                  top: 12, left: 24, right: 24),
+                                              child: RaisedButton(
+                                                child: Text('New Deck'),
+                                                onPressed: () {
+                                                  var title =
+                                                      textEditingController
+                                                          .text;
+
+                                                  DeckBloc.instance
+                                                      .newDeck(title);
+
+                                                  Navigator.pop(context);
+                                                },
+                                              )),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                                transitionBuilder: (_, anim, __, child) {
+                                  return SlideTransition(
+                                    position: Tween(
+                                            begin: Offset(0, 1),
+                                            end: Offset(0, 0))
+                                        .animate(anim),
+                                    child: child,
+                                  );
+                                },
                               );
                             },
-                            transitionBuilder: (_, anim, __, child) {
-                              return SlideTransition(
-                                position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(anim),
-                                child: child,
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ],
-                    spacing: 8,
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ))
-          ],
-        ));
+                          ),
+                        ],
+                        spacing: 8,
+                      );
+                    }
+
+                    return Container();
+                  },
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ))
+        ],
+      ),
+      resizeToAvoidBottomInset: false,
+    );
+  }
+
+  void onAddCardPressed() {
+    showGeneralDialog(
+      barrierLabel: "Barrier",
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.5),
+      transitionDuration: Duration(milliseconds: 300),
+      context: context,
+      pageBuilder: (_, __, ___) {
+        final textEditingController = TextEditingController();
+        return Align(
+          alignment: Alignment.topCenter,
+          child: Container(
+            height: 360,
+            //child: SizedBox.expand(child: FlutterLogo()),
+            margin: EdgeInsets.only(top: 48, left: 12, right: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(40),
+            ),
+            child: Column(
+              children: <Widget>[
+                Padding(
+                    padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                    child: Material(
+                        color: Colors.transparent,
+                        child: TextField(
+                          controller: textEditingController,
+                          decoration: InputDecoration(labelText: 'Title'),
+                        ))),
+                Padding(
+                    padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                    child: RaisedButton(
+                      child: Text('Add Card'),
+                      onPressed: () {
+                        var title = textEditingController.text;
+
+                        var card =
+                            FlashCard.create(title: title, content: title);
+
+                        DeckBloc.instance.addCard(card);
+
+                        Navigator.pop(context);
+                      },
+                    )),
+              ],
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (_, anim, __, child) {
+        return SlideTransition(
+          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(anim),
+          child: child,
+        );
+      },
+    );
   }
 }
 
 class CustomCarouselSlider extends StatelessWidget {
+  final List<FlashCard> cards;
+
+  CustomCarouselSlider({this.cards});
+
   @override
   Widget build(BuildContext context) {
     return CarouselSlider(
@@ -148,126 +262,47 @@ class CustomCarouselSlider extends StatelessWidget {
         height: 240,
       ),
       items: [
-        Padding(
-          child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
-              child: Container(
-                child: Stack(
-                  children: [
-                    Positioned(
-                        top: 18,
-                        left: 18,
-                        right: 18,
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          child: AutoSizeText(
-                            'Title is gsdfsdafd asdasdasdasd',
-                            maxLines: 1,
-                            maxFontSize: 48,
-                            minFontSize: 18,
-                            style: TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                        )),
-                    Positioned(
-                        top: 64,
-                        left: 18,
-                        right: 18,
-                        child: Container(
-                          child: AutoSizeText(
-                            'Title is gsdfsdafd asdasdasdasdasdfdasfasdfadsasd',
-                            maxLines: 6,
-                            maxFontSize: 24,
-                            minFontSize: 18,
-                            style: TextStyle(fontWeight: FontWeight.normal),
-                          ),
-                        )),
-                  ],
-                ),
-                height: 240,
-                width: double.infinity,
-              )),
-          padding: EdgeInsets.all(0),
-        ),
-        Padding(
-          child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
-              child: Container(
-                child: Stack(
-                  children: [
-                    Positioned(
-                        top: 18,
-                        left: 18,
-                        right: 18,
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          child: AutoSizeText(
-                            'Good',
-                            maxLines: 1,
-                            maxFontSize: 48,
-                            minFontSize: 18,
-                            style: TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                        )),
-                    Positioned(
-                        top: 64,
-                        left: 18,
-                        right: 18,
-                        child: Container(
-                          child: AutoSizeText(
-                            'Absolutely nice yoh',
-                            maxLines: 6,
-                            maxFontSize: 24,
-                            minFontSize: 18,
-                            style: TextStyle(fontWeight: FontWeight.normal),
-                          ),
-                        )),
-                  ],
-                ),
-                height: 240,
-                width: double.infinity,
-              )),
-          padding: EdgeInsets.all(0),
-        ),
-        Padding(
-          child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
-              child: Container(
-                child: Stack(
-                  children: [
-                    Positioned(
-                        top: 18,
-                        left: 18,
-                        right: 18,
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          child: AutoSizeText(
-                            'Title is gsdfsdafd asdasdasdasd',
-                            maxLines: 1,
-                            maxFontSize: 48,
-                            minFontSize: 18,
-                            style: TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                        )),
-                    Positioned(
-                        top: 64,
-                        left: 18,
-                        right: 18,
-                        child: Container(
-                          child: AutoSizeText(
-                            'Title is gsdfsdafd asdasdasdasdasdfdasfasdfadsasd',
-                            maxLines: 6,
-                            maxFontSize: 24,
-                            minFontSize: 18,
-                            style: TextStyle(fontWeight: FontWeight.normal),
-                          ),
-                        )),
-                  ],
-                ),
-                height: 240,
-                width: double.infinity,
-              )),
-          padding: EdgeInsets.all(0),
-        ),
+        ...cards.map((e) => Padding(
+              child: Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(0))),
+                  child: Container(
+                    child: Stack(
+                      children: [
+                        Positioned(
+                            top: 18,
+                            left: 18,
+                            right: 18,
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              child: AutoSizeText(
+                                e.title,
+                                maxLines: 1,
+                                maxFontSize: 48,
+                                minFontSize: 18,
+                                style: TextStyle(fontWeight: FontWeight.w800),
+                              ),
+                            )),
+                        Positioned(
+                            top: 64,
+                            left: 18,
+                            right: 18,
+                            child: Container(
+                              child: AutoSizeText(
+                                e.content,
+                                maxLines: 6,
+                                maxFontSize: 24,
+                                minFontSize: 18,
+                                style: TextStyle(fontWeight: FontWeight.normal),
+                              ),
+                            )),
+                      ],
+                    ),
+                    height: 240,
+                    width: double.infinity,
+                  )),
+              padding: EdgeInsets.all(0),
+            ))
       ],
     );
   }
