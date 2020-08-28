@@ -8,10 +8,10 @@ part 'flash_card.g.dart';
 @HiveType(typeId: 0)
 class FlashCard extends HiveObject {
   @HiveField(0)
-  final String content;
+  String content;
 
   @HiveField(1)
-  final String title;
+  String title;
 
   @HiveField(2)
   final int timeStamp;

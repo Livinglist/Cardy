@@ -2,7 +2,11 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:carousel_slider/carousel_options.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flash_card/bloc/deck_bloc.dart';
+import 'package:flash_card/ui/deck_edit_page.dart';
+import 'package:flash_card/ui/deck_play_page.dart';
 import 'package:flutter/material.dart';
+
+import 'deck_edit_page.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -10,23 +14,48 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  final chipMap = {};
   final categories = [
     'English',
     'N2 Kanji',
     'GRE Vocabulary',
   ];
+  final scaffoldKey = GlobalKey<ScaffoldState>();
+  int currentIndex;
+  Deck selectedDeck;
 
   @override
   void initState() {
-    DeckBloc.instance.getAllDecks();
+    DeckBloc.instance.init();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey,
       appBar: AppBar(
+        actions: [
+          IconButton(
+              icon: Icon(Icons.delete_forever), onPressed: onDeleteDeckPressed),
+          IconButton(
+              icon: Icon(Icons.edit),
+              onPressed: () {
+                Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => DeckEditPage()));
+              }),
+          IconButton(
+              icon: Icon(Icons.play_arrow),
+              onPressed: () {
+                DeckBloc.instance.deck.first.then((deck) {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => DeckPlayPage(
+                                deck: deck,
+                              )));
+                });
+              }),
+        ],
         elevation: 0,
       ),
       backgroundColor: Colors.black,
@@ -36,7 +65,12 @@ class _MainPageState extends State<MainPage> {
             stream: DeckBloc.instance.deck,
             builder: (_, AsyncSnapshot<Deck> snapshot) {
               if (snapshot.hasData) {
-                return CustomCarouselSlider(cards: snapshot.data.cards);
+                return CustomCarouselSlider(
+                  cards: snapshot.data.cards,
+                  onPageChanged: (index) {
+                    currentIndex = index;
+                  },
+                );
               }
 
               return Center(
@@ -45,10 +79,21 @@ class _MainPageState extends State<MainPage> {
             },
           ),
           Padding(
-            child: RaisedButton(
-              child: Icon(Icons.add),
-              onPressed: onAddCardPressed,
-              shape: StadiumBorder(),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                RaisedButton(
+                  child: Icon(Icons.add),
+                  onPressed: onAddCardPressed,
+                  shape: StadiumBorder(),
+                ),
+                RaisedButton(
+                  child: Icon(Icons.remove),
+                  color: Colors.red,
+                  onPressed: onRemoveCardPressed,
+                  shape: CircleBorder(),
+                ),
+              ],
             ),
             padding: EdgeInsets.all(12),
           ),
@@ -62,8 +107,8 @@ class _MainPageState extends State<MainPage> {
                     if (snapshot.hasData) {
                       var decks = snapshot.data;
 
-                      if (chipMap.isEmpty && decks.isNotEmpty) {
-                        chipMap[decks[0]] = true;
+                      if (selectedDeck == null && decks.isNotEmpty) {
+                        selectedDeck = decks[0];
                       }
 
                       return Wrap(
@@ -85,7 +130,7 @@ class _MainPageState extends State<MainPage> {
                               Colors.amber
                             ];
 
-                            bool selected = chipMap[e] ?? false;
+                            bool selected = selectedDeck == e;
 
                             return FilterChip(
                                 selectedColor: colors.elementAt(index),
@@ -96,8 +141,7 @@ class _MainPageState extends State<MainPage> {
                                 onSelected: (val) {
                                   setState(() {
                                     if (val == true) {
-                                      chipMap.clear();
-                                      chipMap[e] = val;
+                                      selectedDeck = e;
                                       DeckBloc.instance.selectDeck(e.uid);
                                     }
                                   });
@@ -188,52 +232,87 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
+  void onRemoveCardPressed() {
+    DeckBloc.instance.removeCardAt(currentIndex).then((title) {
+      if (title != null) {
+        scaffoldKey.currentState.hideCurrentSnackBar();
+        scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text('Removed $title'),
+          action: SnackBarAction(
+            label: 'Revert',
+            onPressed: () {
+              DeckBloc.instance.revertRemovingCard(currentIndex);
+            },
+          ),
+        ));
+      }
+    });
+  }
+
   void onAddCardPressed() {
     showGeneralDialog(
       barrierLabel: "Barrier",
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withOpacity(0.9),
       transitionDuration: Duration(milliseconds: 300),
       context: context,
       pageBuilder: (_, __, ___) {
-        final textEditingController = TextEditingController();
+        final titleEditingController = TextEditingController();
+        final contentEditingController = TextEditingController();
         return Align(
           alignment: Alignment.topCenter,
-          child: Container(
-            height: 360,
-            //child: SizedBox.expand(child: FlutterLogo()),
-            margin: EdgeInsets.only(top: 48, left: 12, right: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(40),
-            ),
-            child: Column(
-              children: <Widget>[
-                Padding(
-                    padding: EdgeInsets.only(top: 12, left: 24, right: 24),
-                    child: Material(
-                        color: Colors.transparent,
-                        child: TextField(
-                          controller: textEditingController,
-                          decoration: InputDecoration(labelText: 'Title'),
-                        ))),
-                Padding(
-                    padding: EdgeInsets.only(top: 12, left: 24, right: 24),
-                    child: RaisedButton(
-                      child: Text('Add Card'),
-                      onPressed: () {
-                        var title = textEditingController.text;
+          child: Column(
+            children: [
+              Container(
+                height: 240,
+                //child: SizedBox.expand(child: FlutterLogo()),
+                margin: EdgeInsets.only(top: 48, left: 12, right: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(0),
+                ),
+                child: Column(
+                  children: <Widget>[
+                    Padding(
+                        padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                        child: Material(
+                            color: Colors.transparent,
+                            child: TextField(
+                              controller: titleEditingController,
+                              decoration: InputDecoration(labelText: 'Title'),
+                              style: TextStyle(fontWeight: FontWeight.w800),
+                            ))),
+                    Padding(
+                        padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                        child: Material(
+                            color: Colors.transparent,
+                            child: TextField(
+                              controller: contentEditingController,
+                              decoration: InputDecoration(labelText: 'Content'),
+                              minLines: 4,
+                              maxLines: 5,
+                            ))),
+                  ],
+                ),
+              ),
+              Padding(
+                  padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                  child: RaisedButton(
+                    child: Icon(Icons.add),
+                    shape: StadiumBorder(),
+                    onPressed: () {
+                      var title = titleEditingController.text;
+                      var content = contentEditingController.text;
 
-                        var card =
-                            FlashCard.create(title: title, content: title);
+                      var card =
+                          FlashCard.create(title: title, content: content);
 
-                        DeckBloc.instance.addCard(card);
+                      DeckBloc.instance.addCard(card);
 
-                        Navigator.pop(context);
-                      },
-                    )),
-              ],
-            ),
+                      Navigator.pop(context);
+                    },
+                  )),
+            ],
           ),
         );
       },
@@ -245,12 +324,41 @@ class _MainPageState extends State<MainPage> {
       },
     );
   }
+
+  void onDeleteDeckPressed() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Delete ${selectedDeck.title}'),
+            content: Text('Confirm deleting ${selectedDeck.title}?'),
+            actions: [
+              FlatButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancel')),
+              FlatButton(
+                  onPressed: () {
+                    DeckBloc.instance.deleteDeck(selectedDeck).then((nextDeck) {
+                      setState(() {
+                        selectedDeck = nextDeck;
+                      });
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: Text('Yes')),
+            ],
+          );
+        });
+  }
 }
 
 class CustomCarouselSlider extends StatelessWidget {
   final List<FlashCard> cards;
+  final ValueChanged<int> onPageChanged;
 
-  CustomCarouselSlider({this.cards});
+  CustomCarouselSlider({this.cards, this.onPageChanged}) {
+    onPageChanged(0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -260,6 +368,9 @@ class CustomCarouselSlider extends StatelessWidget {
         aspectRatio: 1.5,
         enlargeCenterPage: false,
         height: 240,
+        onPageChanged: (index, _) {
+          onPageChanged(index);
+        },
       ),
       items: [
         ...cards.map((e) => Padding(

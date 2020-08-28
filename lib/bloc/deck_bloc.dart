@@ -16,13 +16,16 @@ class DeckBloc {
   final _decksFetcher = BehaviorSubject<List<Deck>>();
   final _singleDeckFetcher = BehaviorSubject<Deck>();
 
+  ///A temp storage for removed card.
+  FlashCard removedCard;
+
   Stream<List<Deck>> get decks => _decksFetcher.stream;
   Stream<Deck> get deck => _singleDeckFetcher.stream;
 
-  void getAllDecks() async {
+  void init() async {
     var uids = <String>[];
 
-    var decksRefBox = await Hive.openBox(deckUids);
+    var decksRefBox = await Hive.openBox(deckUidsKey);
     print(decksRefBox.values);
     uids = decksRefBox.values.whereType<String>().toList();
     print("uids is $uids");
@@ -37,11 +40,37 @@ class DeckBloc {
         }
         print("The deck is ${deck.title ?? 'null'}");
         decks.add(deck);
-        _decksFetcher.sink.add(decks);
+        _decksFetcher.sink
+            .add(decks..sort((a, b) => a.timeStamp.compareTo(b.timeStamp)));
       });
     }
 
-    _decksFetcher.sink.add(decks);
+    _decksFetcher.sink
+        .add(decks..sort((a, b) => a.timeStamp.compareTo(b.timeStamp)));
+  }
+
+  void getAllDecks() async {
+    var uids = <String>[];
+
+    var decksRefBox = await Hive.openBox(deckUidsKey);
+    print(decksRefBox.values);
+    uids = decksRefBox.values.whereType<String>().toList();
+    print("uids is $uids");
+
+    var decks = <Deck>[];
+
+    for (var uid in uids) {
+      Hive.openBox(uid).then((box) {
+        var deck = box.get('deck') as Deck;
+        print("The deck is ${deck.title ?? 'null'}");
+        decks.add(deck);
+        _decksFetcher.sink
+            .add(decks..sort((a, b) => a.timeStamp.compareTo(b.timeStamp)));
+      });
+    }
+
+    _decksFetcher.sink
+        .add(decks..sort((a, b) => a.timeStamp.compareTo(b.timeStamp)));
   }
 
   void addCard(FlashCard card) {
@@ -54,6 +83,48 @@ class DeckBloc {
       // Hive.openBox(deck.uid).then((box) {
       //   box.put('deck', deck);
       // });
+      _singleDeckFetcher.add(deck);
+    });
+  }
+
+  void editCard(FlashCard card) {
+    _singleDeckFetcher.first.then((deck) {
+      // var cardToBeEdited = deck.cards.singleWhere((element) => element.timeStamp == card.timeStamp,
+      //     orElse: () => null);
+      // cardToBeEdited = deck.cards
+      // deck.addCard(card);
+      deck.save();
+
+      // Hive.openBox(deck.uid).then((box) {
+      //   box.put('deck', deck);
+      // });
+      _singleDeckFetcher.add(deck);
+    });
+  }
+
+  Future<String> removeCardAt(int index) {
+    return _singleDeckFetcher.first.then((deck) {
+      if (deck.cards.isEmpty) return null;
+
+      removedCard = deck.cards.elementAt(index);
+      String title = removedCard.title;
+      deck.cards.removeAt(index);
+      deck.save();
+
+      _singleDeckFetcher.add(deck);
+
+      return title;
+    });
+  }
+
+  void revertRemovingCard([int index]) {
+    _singleDeckFetcher.first.then((deck) {
+      if (index == null)
+        deck.cards.add(removedCard);
+      else
+        deck.cards.insert(index, removedCard);
+      deck.save();
+
       _singleDeckFetcher.add(deck);
     });
   }
@@ -91,6 +162,8 @@ class DeckBloc {
       });
     }
 
+    _singleDeckFetcher.sink.add(deck);
+
     getAllDecks();
   }
 
@@ -100,6 +173,33 @@ class DeckBloc {
       var box = Hive.box(deck.uid);
       box.put('deck', deck);
       _singleDeckFetcher.add(deck);
+    });
+  }
+
+  Future<Deck> deleteDeck(Deck deck) {
+    return decks.first.then((decks) {
+      int index = decks.indexOf(deck) + 1;
+      Deck nextDeck;
+      if (decks.length == 1) {
+        nextDeck = null;
+      } else if (index >= decks.length) {
+        nextDeck = decks[index - 2];
+      } else {
+        nextDeck = decks[index];
+      }
+
+      decks.remove(deck);
+      deck.delete();
+      Hive.openBox(deckUidsKey).then((box) {
+        print('deleting ${deck.uid}');
+        var values = box.values.toList();
+        values.remove(deck.uid);
+        box.clear().then((value) => box.addAll(values));
+      });
+      _decksFetcher.sink.add(decks);
+      if (nextDeck != null) _singleDeckFetcher.sink.add(nextDeck);
+
+      return nextDeck;
     });
   }
 
