@@ -1,11 +1,9 @@
-import 'package:auto_size_text/auto_size_text.dart';
-import 'package:carousel_slider/carousel_options.dart';
-import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/material.dart';
+
+import 'components/custom_carousel_slider.dart';
 import 'package:flash_card/bloc/deck_bloc.dart';
 import 'package:flash_card/ui/deck_edit_page.dart';
 import 'package:flash_card/ui/deck_play_page.dart';
-import 'package:flutter/material.dart';
-
 import 'deck_edit_page.dart';
 
 class MainPage extends StatefulWidget {
@@ -31,204 +29,172 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: scaffoldKey,
-      appBar: AppBar(
-        actions: [
-          IconButton(
-              icon: Icon(Icons.delete_forever), onPressed: onDeleteDeckPressed),
-          IconButton(
-              icon: Icon(Icons.edit),
-              onPressed: () {
-                Navigator.push(
-                    context, MaterialPageRoute(builder: (_) => DeckEditPage()));
-              }),
-          IconButton(
-              icon: Icon(Icons.play_arrow),
-              onPressed: () {
-                DeckBloc.instance.deck.first.then((deck) {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => DeckPlayPage(
-                                deck: deck,
-                              )));
-                });
-              }),
-        ],
-        elevation: 0,
-      ),
-      backgroundColor: Colors.black,
-      body: Column(
-        children: [
-          StreamBuilder(
-            stream: DeckBloc.instance.deck,
-            builder: (_, AsyncSnapshot<Deck> snapshot) {
-              if (snapshot.hasData) {
-                return CustomCarouselSlider(
-                  cards: snapshot.data.cards,
-                  onPageChanged: (index) {
-                    currentIndex = index;
-                  },
-                );
-              }
+    return StreamBuilder(
+      stream: DeckBloc.instance.deck,
+      builder: (_, AsyncSnapshot<Deck> snapshot) {
+        if (snapshot.hasData) {
+          selectedDeck = snapshot.data;
 
-              return Center(
-                child: Text('No Deck Selected'),
-              );
-            },
-          ),
-          Padding(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                RaisedButton(
-                  child: Icon(Icons.add),
-                  onPressed: onAddCardPressed,
-                  shape: StadiumBorder(),
-                ),
-                RaisedButton(
-                  child: Icon(Icons.remove),
-                  color: Colors.red,
-                  onPressed: onRemoveCardPressed,
-                  shape: CircleBorder(),
-                ),
+          return Scaffold(
+            key: scaffoldKey,
+            appBar: AppBar(
+              actions: [
+                IconButton(
+                    icon: Icon(Icons.delete_forever),
+                    onPressed: onDeleteDeckPressed),
+                IconButton(
+                    icon: Icon(Icons.edit),
+                    onPressed: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => DeckEditPage()));
+                    }),
+                IconButton(
+                    icon: Icon(Icons.play_arrow),
+                    onPressed: () {
+                      DeckBloc.instance.deck.first.then((deck) {
+                        if (deck.cards.isNotEmpty)
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => DeckPlayPage(
+                                        deck: deck,
+                                      )));
+                        else {
+                          scaffoldKey.currentState.hideCurrentSnackBar();
+                          scaffoldKey.currentState.showSnackBar(SnackBar(
+                            content: Text('${deck.title} Is Empty'),
+                            action: SnackBarAction(
+                              label: 'OK',
+                              onPressed: () => scaffoldKey.currentState
+                                  .hideCurrentSnackBar(),
+                            ),
+                          ));
+                        }
+                      });
+                    }),
               ],
+              elevation: 0,
             ),
-            padding: EdgeInsets.all(12),
-          ),
-          Spacer(),
-          Container(
-              width: double.infinity,
-              child: Padding(
-                child: StreamBuilder(
-                  stream: DeckBloc.instance.decks,
-                  builder: (_, AsyncSnapshot<List<Deck>> snapshot) {
+            backgroundColor: Colors.black,
+            body: Column(
+              children: [
+                StreamBuilder(
+                  stream: DeckBloc.instance.deck,
+                  builder: (_, AsyncSnapshot<Deck> snapshot) {
                     if (snapshot.hasData) {
-                      var decks = snapshot.data;
-
-                      if (selectedDeck == null && decks.isNotEmpty) {
-                        selectedDeck = decks[0];
-                      }
-
-                      return Wrap(
-                        alignment: WrapAlignment.start,
-                        children: [
-                          ...decks.map((e) {
-                            int index = int.tryParse(e.uid[0]) ?? 0;
-
-                            List<Color> colors = [
-                              Colors.teal,
-                              Colors.orange,
-                              Colors.grey,
-                              Colors.redAccent,
-                              Colors.indigoAccent,
-                              Colors.cyan,
-                              Colors.pinkAccent,
-                              Colors.lightBlue,
-                              Colors.lightGreen,
-                              Colors.amber
-                            ];
-
-                            bool selected = selectedDeck == e;
-
-                            return FilterChip(
-                                selectedColor: colors.elementAt(index),
-                                backgroundColor:
-                                    colors.elementAt(index).withOpacity(0.8),
-                                selected: selected,
-                                label: Text(e.title),
-                                onSelected: (val) {
-                                  setState(() {
-                                    if (val == true) {
-                                      selectedDeck = e;
-                                      DeckBloc.instance.selectDeck(e.uid);
-                                    }
-                                  });
-                                });
-                          }).toList(),
-                          ActionChip(
-                            label: Icon(Icons.add),
-                            onPressed: () {
-                              showGeneralDialog(
-                                barrierLabel: "Barrier",
-                                barrierDismissible: true,
-                                barrierColor: Colors.black.withOpacity(0.5),
-                                transitionDuration: Duration(milliseconds: 300),
-                                context: context,
-                                pageBuilder: (_, __, ___) {
-                                  final textEditingController =
-                                      TextEditingController();
-                                  return Align(
-                                    alignment: Alignment.topCenter,
-                                    child: Container(
-                                      height: 360,
-                                      //child: SizedBox.expand(child: FlutterLogo()),
-                                      margin: EdgeInsets.only(
-                                          top: 48, left: 12, right: 12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(40),
-                                      ),
-                                      child: Column(
-                                        children: <Widget>[
-                                          Padding(
-                                              padding: EdgeInsets.only(
-                                                  top: 12, left: 24, right: 24),
-                                              child: Material(
-                                                  color: Colors.transparent,
-                                                  child: TextField(
-                                                    controller:
-                                                        textEditingController,
-                                                    decoration: InputDecoration(
-                                                        labelText: 'Title'),
-                                                  ))),
-                                          Padding(
-                                              padding: EdgeInsets.only(
-                                                  top: 12, left: 24, right: 24),
-                                              child: RaisedButton(
-                                                child: Text('New Deck'),
-                                                onPressed: () {
-                                                  var title =
-                                                      textEditingController
-                                                          .text;
-
-                                                  DeckBloc.instance
-                                                      .newDeck(title);
-
-                                                  Navigator.pop(context);
-                                                },
-                                              )),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                                transitionBuilder: (_, anim, __, child) {
-                                  return SlideTransition(
-                                    position: Tween(
-                                            begin: Offset(0, 1),
-                                            end: Offset(0, 0))
-                                        .animate(anim),
-                                    child: child,
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ],
-                        spacing: 8,
+                      var deck = snapshot.data;
+                      if (deck.cards.isEmpty)
+                        return Center(
+                            child: Container(
+                                height: 240,
+                                child: Center(
+                                  child: Text(
+                                    'No Flash Cards Found in ${deck.title}',
+                                    style: TextStyle(color: Colors.white60),
+                                  ),
+                                )));
+                      return CustomCarouselSlider(
+                        cards: deck.cards,
+                        onPageChanged: (index) {
+                          currentIndex = index;
+                        },
                       );
                     }
 
-                    return Container();
+                    return Center(
+                      child: Text('No Deck Selected'),
+                    );
                   },
                 ),
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ))
-        ],
-      ),
-      resizeToAvoidBottomInset: false,
+                Padding(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      RaisedButton(
+                        child: Icon(Icons.add),
+                        onPressed: onAddCardPressed,
+                        shape: StadiumBorder(),
+                      ),
+                      RaisedButton(
+                        child: Icon(Icons.remove),
+                        color: Colors.red,
+                        onPressed: onRemoveCardPressed,
+                        shape: CircleBorder(),
+                      ),
+                    ],
+                  ),
+                  padding: EdgeInsets.all(12),
+                ),
+                Spacer(),
+                Container(
+                    width: double.infinity,
+                    child: Padding(
+                      child: StreamBuilder(
+                        stream: DeckBloc.instance.decks,
+                        builder: (_, AsyncSnapshot<List<Deck>> snapshot) {
+                          if (snapshot.hasData) {
+                            var decks = snapshot.data;
+
+                            return Wrap(
+                              alignment: WrapAlignment.start,
+                              children: [
+                                ...decks.map((e) {
+                                  int index = int.tryParse(e.uid[0]) ?? 0;
+
+                                  List<Color> colors = [
+                                    Colors.teal,
+                                    Colors.orange,
+                                    Colors.grey,
+                                    Colors.redAccent,
+                                    Colors.indigoAccent,
+                                    Colors.cyan,
+                                    Colors.pinkAccent,
+                                    Colors.lightBlue,
+                                    Colors.lightGreen,
+                                    Colors.amber
+                                  ];
+
+                                  bool selected = selectedDeck.uid == e.uid;
+
+                                  return FilterChip(
+                                      selectedColor: colors.elementAt(index),
+                                      backgroundColor: colors
+                                          .elementAt(index)
+                                          .withOpacity(0.8),
+                                      selected: selected,
+                                      label: Text(e.title),
+                                      onSelected: (val) {
+                                        setState(() {
+                                          if (val == true) {
+                                            DeckBloc.instance.selectDeck(e.uid);
+                                          }
+                                        });
+                                      });
+                                }).toList(),
+                                ActionChip(
+                                    label: Icon(Icons.add),
+                                    onPressed: onNewDeckPressed),
+                              ],
+                              spacing: 8,
+                            );
+                          }
+
+                          return Container();
+                        },
+                      ),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ))
+              ],
+            ),
+            resizeToAvoidBottomInset: false,
+          );
+        }
+
+        return Container(
+          color: Colors.black,
+        );
+      },
     );
   }
 
@@ -350,71 +316,59 @@ class _MainPageState extends State<MainPage> {
           );
         });
   }
-}
 
-class CustomCarouselSlider extends StatelessWidget {
-  final List<FlashCard> cards;
-  final ValueChanged<int> onPageChanged;
+  void onNewDeckPressed() {
+    showGeneralDialog(
+      barrierLabel: "Barrier",
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.5),
+      transitionDuration: Duration(milliseconds: 300),
+      context: context,
+      pageBuilder: (_, __, ___) {
+        final textEditingController = TextEditingController();
+        return Align(
+          alignment: Alignment.topCenter,
+          child: Container(
+            height: 160,
+            //child: SizedBox.expand(child: FlutterLogo()),
+            margin: EdgeInsets.only(top: 48, left: 12, right: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(40),
+            ),
+            child: Column(
+              children: <Widget>[
+                Padding(
+                    padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                    child: Material(
+                        color: Colors.transparent,
+                        child: TextField(
+                          controller: textEditingController,
+                          decoration: InputDecoration(labelText: 'Title'),
+                        ))),
+                Padding(
+                    padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                    child: RaisedButton(
+                      child: Text('New Deck'),
+                      onPressed: () {
+                        var title = textEditingController.text;
 
-  CustomCarouselSlider({this.cards, this.onPageChanged}) {
-    onPageChanged(0);
-  }
+                        DeckBloc.instance.newDeck(title);
 
-  @override
-  Widget build(BuildContext context) {
-    return CarouselSlider(
-      options: CarouselOptions(
-        autoPlay: false,
-        aspectRatio: 1.5,
-        enlargeCenterPage: false,
-        height: 240,
-        onPageChanged: (index, _) {
-          onPageChanged(index);
-        },
-      ),
-      items: [
-        ...cards.map((e) => Padding(
-              child: Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(0))),
-                  child: Container(
-                    child: Stack(
-                      children: [
-                        Positioned(
-                            top: 18,
-                            left: 18,
-                            right: 18,
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              child: AutoSizeText(
-                                e.title,
-                                maxLines: 1,
-                                maxFontSize: 48,
-                                minFontSize: 18,
-                                style: TextStyle(fontWeight: FontWeight.w800),
-                              ),
-                            )),
-                        Positioned(
-                            top: 64,
-                            left: 18,
-                            right: 18,
-                            child: Container(
-                              child: AutoSizeText(
-                                e.content,
-                                maxLines: 6,
-                                maxFontSize: 24,
-                                minFontSize: 18,
-                                style: TextStyle(fontWeight: FontWeight.normal),
-                              ),
-                            )),
-                      ],
-                    ),
-                    height: 240,
-                    width: double.infinity,
-                  )),
-              padding: EdgeInsets.all(0),
-            ))
-      ],
+                        Navigator.pop(context);
+                      },
+                    )),
+              ],
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (_, anim, __, child) {
+        return SlideTransition(
+          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(anim),
+          child: child,
+        );
+      },
     );
   }
 }

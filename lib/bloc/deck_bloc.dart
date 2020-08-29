@@ -203,6 +203,15 @@ class DeckBloc {
     });
   }
 
+  void editDeckTitle(String title) {
+    _singleDeckFetcher.first.then((deck) {
+      deck.title = title;
+      deck.save();
+      _singleDeckFetcher.sink.add(deck);
+      getAllDecks();
+    });
+  }
+
   dispose() {
     _decksFetcher.close();
     _singleDeckFetcher.close();

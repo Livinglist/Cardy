@@ -11,97 +11,87 @@ class _DeckEditPageState extends State<DeckEditPage> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: scaffoldKey,
-      appBar: AppBar(
-        actions: [IconButton(icon: Icon(Icons.edit), onPressed: () {})],
-        elevation: 0,
-        title: FutureBuilder(
-          future: DeckBloc.instance.deck.first,
-          builder: (_, AsyncSnapshot<Deck> snapshot) {
-            if (snapshot.hasData) {
-              return Text(snapshot.data.title);
-            }
-            return Container();
-          },
-        ),
-      ),
-      backgroundColor: Colors.black,
-      body: StreamBuilder(
+    return StreamBuilder(
         stream: DeckBloc.instance.deck,
         builder: (_, AsyncSnapshot<Deck> snapshot) {
           if (snapshot.hasData) {
-            var cards = snapshot.data.cards;
-
-            return ListView(
-              children: cards.map((e) {
-                return Dismissible(
-                  key: UniqueKey(),
-                  background: Container(
-                    color: Colors.blue,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Padding(
-                        child: Icon(
-                          Icons.edit,
-                          color: Colors.white,
-                        ),
-                        padding: EdgeInsets.only(left: 36),
-                      ),
-                    ),
-                  ),
-                  secondaryBackground: Container(
-                    color: Colors.red,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Padding(
-                        child: Icon(
-                          Icons.delete,
-                          color: Colors.white,
-                        ),
-                        padding: EdgeInsets.only(right: 36),
-                      ),
-                    ),
-                  ),
-                  child: FlashCardView(
-                    key: UniqueKey(),
-                    title: e.title,
-                    content: e.content,
-                  ),
-                  onDismissed: (DismissDirection direction) {
-                    int currentIndex = cards.indexOf(e);
-                    DeckBloc.instance.removeCardAt(currentIndex).then((title) {
-                      if (title != null) {
-                        scaffoldKey.currentState.hideCurrentSnackBar();
-                        scaffoldKey.currentState.showSnackBar(SnackBar(
-                          content: Text('Removed $title'),
-                          action: SnackBarAction(
-                            label: 'Revert',
-                            onPressed: () {
-                              DeckBloc.instance
-                                  .revertRemovingCard(currentIndex);
-                            },
+            var deck = snapshot.data;
+            var cards = deck.cards;
+            return Scaffold(
+                key: scaffoldKey,
+                appBar: AppBar(actions: [
+                  IconButton(icon: Icon(Icons.edit), onPressed: onEditPressed)
+                ], elevation: 0, title: Text(snapshot.data.title)),
+                backgroundColor: Colors.black,
+                body: ListView(
+                  children: cards.map((e) {
+                    return Dismissible(
+                      key: UniqueKey(),
+                      background: Container(
+                        color: Colors.blue,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            child: Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                            ),
+                            padding: EdgeInsets.only(left: 36),
                           ),
-                        ));
-                      }
-                    });
-                  },
-                  confirmDismiss: (DismissDirection direction) {
-                    if (direction == DismissDirection.endToStart) {
-                      return Future.value(true);
-                    }
+                        ),
+                      ),
+                      secondaryBackground: Container(
+                        color: Colors.red,
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            child: Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
+                            padding: EdgeInsets.only(right: 36),
+                          ),
+                        ),
+                      ),
+                      child: FlashCardView(
+                        key: UniqueKey(),
+                        title: e.title,
+                        content: e.content,
+                      ),
+                      onDismissed: (DismissDirection direction) {
+                        int currentIndex = cards.indexOf(e);
+                        DeckBloc.instance
+                            .removeCardAt(currentIndex)
+                            .then((title) {
+                          if (title != null) {
+                            scaffoldKey.currentState.hideCurrentSnackBar();
+                            scaffoldKey.currentState.showSnackBar(SnackBar(
+                              content: Text('Removed $title'),
+                              action: SnackBarAction(
+                                label: 'Revert',
+                                onPressed: () {
+                                  DeckBloc.instance
+                                      .revertRemovingCard(currentIndex);
+                                },
+                              ),
+                            ));
+                          }
+                        });
+                      },
+                      confirmDismiss: (DismissDirection direction) {
+                        if (direction == DismissDirection.endToStart) {
+                          return Future.value(true);
+                        }
 
-                    showEditPopup(e);
-                    return Future.value(false);
-                  },
-                );
-              }).toList(),
-            );
-          }
-          return Container();
-        },
-      ),
-    );
+                        showEditPopup(e);
+                        return Future.value(false);
+                      },
+                    );
+                  }).toList(),
+                ));
+          } else
+            return Container();
+        });
   }
 
   void showEditPopup(FlashCard card) {
@@ -182,5 +172,64 @@ class _DeckEditPageState extends State<DeckEditPage> {
         );
       },
     );
+  }
+
+  void onEditPressed() {
+    DeckBloc.instance.deck.first.then((deck) {
+      showGeneralDialog(
+        barrierLabel: "Barrier",
+        barrierDismissible: true,
+        barrierColor: Colors.black.withOpacity(0.5),
+        transitionDuration: Duration(milliseconds: 300),
+        context: context,
+        pageBuilder: (_, __, ___) {
+          final textEditingController = TextEditingController();
+          textEditingController.text = deck.title;
+          return Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              height: 160,
+              //child: SizedBox.expand(child: FlutterLogo()),
+              margin: EdgeInsets.only(top: 48, left: 12, right: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(40),
+              ),
+              child: Column(
+                children: <Widget>[
+                  Padding(
+                      padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                      child: Material(
+                          color: Colors.transparent,
+                          child: TextField(
+                            controller: textEditingController,
+                            decoration: InputDecoration(labelText: 'Title'),
+                          ))),
+                  Padding(
+                      padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                      child: RaisedButton(
+                        child: Icon(Icons.check),
+                        onPressed: () {
+                          var title = textEditingController.text;
+
+                          DeckBloc.instance.editDeckTitle(title);
+
+                          Navigator.pop(context);
+                        },
+                      )),
+                ],
+              ),
+            ),
+          );
+        },
+        transitionBuilder: (_, anim, __, child) {
+          return SlideTransition(
+            position:
+                Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(anim),
+            child: child,
+          );
+        },
+      );
+    });
   }
 }
