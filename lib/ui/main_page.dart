@@ -73,8 +73,8 @@ class _MainPageState extends State<MainPage> {
                     'add_card', // Unique id that identifies this overlay.
                 tapTarget: Icon(Icons
                     .add), // The widget that will be displayed as the tap target.
-                title: Text('Add A Flash Card'),
-                description: Text('Tap Here To Create A Flash Card.'),
+                title: Text('Add A Flashcard'),
+                description: Text('Tap Here To Create A Flashcard.'),
                 backgroundColor: Colors.deepOrange,
                 targetColor: Colors.white,
                 textColor: Colors.white,
@@ -88,8 +88,8 @@ class _MainPageState extends State<MainPage> {
                   'remove_card', // Unique id that identifies this overlay.
               tapTarget: Icon(Icons
                   .remove), // The widget that will be displayed as the tap target.
-              title: Text('Remove A Flash Card'),
-              description: Text('Tap Here To Remove A Flash Card.'),
+              title: Text('Remove A Flashcard'),
+              description: Text('Tap Here To Remove A Flashcard.'),
               backgroundColor: Colors.purple,
               targetColor: Colors.red,
               textColor: Colors.white,
@@ -104,8 +104,8 @@ class _MainPageState extends State<MainPage> {
               featureId: 'edit_card', // Unique id that identifies this overlay.
               tapTarget: Icon(Icons
                   .edit), // The widget that will be displayed as the tap target.
-              title: Text('Edit A Flash Card'),
-              description: Text('Tap Here To Edit A Flash Card.'),
+              title: Text('Edit A Flashcard'),
+              description: Text('Tap Here To Edit A Flashcard.'),
               backgroundColor: Colors.purple,
               targetColor: Colors.red,
               textColor: Colors.white,
@@ -192,7 +192,7 @@ class _MainPageState extends State<MainPage> {
                             height: 240,
                             child: Center(
                               child: Text(
-                                'No Flash Card Found in ${selectedDeck.title}',
+                                'No Flashcard Found in ${selectedDeck.title}',
                                 style: TextStyle(color: Colors.white60),
                               ),
                             ))),
