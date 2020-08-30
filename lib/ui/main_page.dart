@@ -131,6 +131,18 @@ class _MainPageState extends State<MainPage> {
                   IconButton(
                       icon: Icon(Icons.edit),
                       onPressed: () {
+                        if (selectedDeck == null) {
+                          scaffoldKey.currentState.hideCurrentSnackBar();
+                          scaffoldKey.currentState.showSnackBar(SnackBar(
+                            content: Text('No Deck Found'),
+                            action: SnackBarAction(
+                              label: 'OK',
+                              onPressed: () => scaffoldKey.currentState
+                                  .hideCurrentSnackBar(),
+                            ),
+                          ));
+                          return;
+                        }
                         Navigator.push(context,
                             MaterialPageRoute(builder: (_) => DeckEditPage()));
                       }),
@@ -383,6 +395,17 @@ class _MainPageState extends State<MainPage> {
   }
 
   void onDeleteDeckPressed() {
+    if (selectedDeck == null) {
+      scaffoldKey.currentState.hideCurrentSnackBar();
+      scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('No Deck Found'),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () => scaffoldKey.currentState.hideCurrentSnackBar(),
+        ),
+      ));
+      return;
+    }
     showDialog(
         context: context,
         builder: (context) {
