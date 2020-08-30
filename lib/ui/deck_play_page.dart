@@ -92,11 +92,14 @@ class _DeckPlayPageState extends State<DeckPlayPage> {
                       ),
                       Expanded(
                         child: Center(
+                            child: Padding(
                           child: Text(
                             e.content,
                             style: TextStyle(color: Colors.white, fontSize: 18),
+                            textAlign: TextAlign.center,
                           ),
-                        ),
+                          padding: EdgeInsets.symmetric(horizontal: 24),
+                        )),
                         flex: 1,
                       )
                     ],

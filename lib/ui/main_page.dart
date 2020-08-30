@@ -137,6 +137,18 @@ class _MainPageState extends State<MainPage> {
                   IconButton(
                       icon: Icon(Icons.play_arrow),
                       onPressed: () {
+                        if (selectedDeck == null) {
+                          scaffoldKey.currentState.hideCurrentSnackBar();
+                          scaffoldKey.currentState.showSnackBar(SnackBar(
+                            content: Text('No Deck Found'),
+                            action: SnackBarAction(
+                              label: 'OK',
+                              onPressed: () => scaffoldKey.currentState
+                                  .hideCurrentSnackBar(),
+                            ),
+                          ));
+                          return;
+                        }
                         DeckBloc.instance.deck.first.then((deck) {
                           if (deck.cards.isNotEmpty)
                             Navigator.push(
@@ -284,6 +296,17 @@ class _MainPageState extends State<MainPage> {
   }
 
   void onAddCardPressed() {
+    if (selectedDeck == null) {
+      scaffoldKey.currentState.hideCurrentSnackBar();
+      scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('No Deck Found'),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () => scaffoldKey.currentState.hideCurrentSnackBar(),
+        ),
+      ));
+      return;
+    }
     showGeneralDialog(
       barrierLabel: "Barrier",
       barrierDismissible: true,

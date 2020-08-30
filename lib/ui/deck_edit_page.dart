@@ -19,10 +19,22 @@ class _DeckEditPageState extends State<DeckEditPage> {
             var cards = deck.cards;
             return Scaffold(
                 key: scaffoldKey,
-                appBar: AppBar(actions: [
-                  IconButton(
-                      icon: Icon(Icons.edit), onPressed: showEditTitlePopup)
-                ], elevation: 0, title: Text(snapshot.data.title)),
+                appBar: AppBar(
+                    actions: [
+                      IconButton(
+                          icon: Icon(Icons.edit), onPressed: showEditTitlePopup)
+                    ],
+                    elevation: 0,
+                    title: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(snapshot.data.title),
+                        Text(
+                          '${deck.cards.length} card${deck.cards.isEmpty ? '' : 's'}',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    )),
                 backgroundColor: Colors.black,
                 body: ListView(
                   children: cards.map((e) {
