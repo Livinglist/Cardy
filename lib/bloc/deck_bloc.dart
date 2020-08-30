@@ -203,7 +203,7 @@ class DeckBloc {
         box.clear().then((value) => box.addAll(values));
       });
       _decksFetcher.sink.add(decks);
-      if (nextDeck != null) _singleDeckFetcher.sink.add(nextDeck);
+      _singleDeckFetcher.sink.add(nextDeck);
 
       return nextDeck;
     });

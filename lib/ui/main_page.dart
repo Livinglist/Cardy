@@ -164,7 +164,7 @@ class _MainPageState extends State<MainPage> {
               backgroundColor: Colors.black,
               body: Column(
                 children: [
-                  if (!snapshot.hasData)
+                  if (!snapshot.hasData || decks.isEmpty)
                     Container(
                       height: 240,
                       child: Center(
