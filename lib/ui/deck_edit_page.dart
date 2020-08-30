@@ -20,7 +20,8 @@ class _DeckEditPageState extends State<DeckEditPage> {
             return Scaffold(
                 key: scaffoldKey,
                 appBar: AppBar(actions: [
-                  IconButton(icon: Icon(Icons.edit), onPressed: onEditPressed)
+                  IconButton(
+                      icon: Icon(Icons.edit), onPressed: showEditTitlePopup)
                 ], elevation: 0, title: Text(snapshot.data.title)),
                 backgroundColor: Colors.black,
                 body: ListView(
@@ -174,7 +175,7 @@ class _DeckEditPageState extends State<DeckEditPage> {
     );
   }
 
-  void onEditPressed() {
+  void showEditTitlePopup() {
     DeckBloc.instance.deck.first.then((deck) {
       showGeneralDialog(
         barrierLabel: "Barrier",

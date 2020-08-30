@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:feature_discovery/feature_discovery.dart';
+import 'package:flutter/scheduler.dart';
 import 'components/custom_carousel_slider.dart';
 import 'package:flash_card/bloc/deck_bloc.dart';
 import 'package:flash_card/ui/deck_edit_page.dart';
@@ -23,6 +24,17 @@ class _MainPageState extends State<MainPage> {
 
   @override
   void initState() {
+    SchedulerBinding.instance.addPostFrameCallback((Duration duration) {
+      FeatureDiscovery.discoverFeatures(
+        context,
+        const <String>{
+          'add_deck',
+          'add_card',
+          'remove_card',
+          'edit_card',
+        },
+      );
+    });
     DeckBloc.instance.init();
     super.initState();
   }
@@ -30,169 +42,225 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: DeckBloc.instance.deck,
-      builder: (_, AsyncSnapshot<Deck> snapshot) {
-        if (snapshot.hasData) {
-          selectedDeck = snapshot.data;
+      stream: DeckBloc.instance.decks,
+      builder: (_, AsyncSnapshot<List<Deck>> decksSnapshot) {
+        var decks = decksSnapshot.data;
 
-          return Scaffold(
-            key: scaffoldKey,
-            appBar: AppBar(
-              actions: [
-                IconButton(
-                    icon: Icon(Icons.delete_forever),
-                    onPressed: onDeleteDeckPressed),
-                IconButton(
-                    icon: Icon(Icons.edit),
-                    onPressed: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => DeckEditPage()));
-                    }),
-                IconButton(
-                    icon: Icon(Icons.play_arrow),
-                    onPressed: () {
-                      DeckBloc.instance.deck.first.then((deck) {
-                        if (deck.cards.isNotEmpty)
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => DeckPlayPage(
-                                        deck: deck,
-                                      )));
-                        else {
-                          scaffoldKey.currentState.hideCurrentSnackBar();
-                          scaffoldKey.currentState.showSnackBar(SnackBar(
-                            content: Text('${deck.title} Is Empty'),
-                            action: SnackBarAction(
-                              label: 'OK',
-                              onPressed: () => scaffoldKey.currentState
-                                  .hideCurrentSnackBar(),
-                            ),
-                          ));
-                        }
-                      });
-                    }),
-              ],
-              elevation: 0,
-            ),
-            backgroundColor: Colors.black,
-            body: Column(
-              children: [
-                StreamBuilder(
-                  stream: DeckBloc.instance.deck,
-                  builder: (_, AsyncSnapshot<Deck> snapshot) {
-                    if (snapshot.hasData) {
-                      var deck = snapshot.data;
-                      if (deck.cards.isEmpty)
-                        return Center(
-                            child: Container(
-                                height: 240,
-                                child: Center(
-                                  child: Text(
-                                    'No Flash Cards Found in ${deck.title}',
-                                    style: TextStyle(color: Colors.white60),
-                                  ),
-                                )));
-                      return CustomCarouselSlider(
-                        cards: deck.cards,
-                        onPageChanged: (index) {
-                          currentIndex = index;
-                        },
-                      );
-                    }
+        return StreamBuilder(
+          stream: DeckBloc.instance.deck,
+          builder: (_, AsyncSnapshot<Deck> snapshot) {
+            selectedDeck = snapshot.data;
 
-                    return Center(
-                      child: Text('No Deck Selected'),
-                    );
-                  },
-                ),
-                Padding(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      RaisedButton(
-                        child: Icon(Icons.add),
-                        onPressed: onAddCardPressed,
-                        shape: StadiumBorder(),
-                      ),
-                      RaisedButton(
-                        child: Icon(Icons.remove),
-                        color: Colors.red,
-                        onPressed: onRemoveCardPressed,
-                        shape: CircleBorder(),
-                      ),
-                    ],
-                  ),
-                  padding: EdgeInsets.all(12),
-                ),
-                Spacer(),
-                Container(
-                    width: double.infinity,
-                    child: Padding(
-                      child: StreamBuilder(
-                        stream: DeckBloc.instance.decks,
-                        builder: (_, AsyncSnapshot<List<Deck>> snapshot) {
-                          if (snapshot.hasData) {
-                            var decks = snapshot.data;
+            Widget addDeckRaisedButton,
+                addCardRaisedButton,
+                removeCardRaisedButton,
+                editCardRaisedButton;
 
-                            return Wrap(
-                              alignment: WrapAlignment.start,
-                              children: [
-                                ...decks.map((e) {
-                                  int index = int.tryParse(e.uid[0]) ?? 0;
+            addDeckRaisedButton = DescribedFeatureOverlay(
+              featureId: 'add_deck', // Unique id that identifies this overlay.
+              tapTarget: Icon(Icons
+                  .add), // The widget that will be displayed as the tap target.
+              title: Text('Create An Deck'),
+              description: Text('Tap Here To Create An New Deck.'),
+              backgroundColor: Colors.blueGrey,
+              targetColor: Colors.white,
+              textColor: Colors.white,
+              child: ActionChip(
+                  label: Icon(Icons.add), onPressed: onNewDeckPressed),
+            );
+            addCardRaisedButton = DescribedFeatureOverlay(
+                featureId:
+                    'add_card', // Unique id that identifies this overlay.
+                tapTarget: Icon(Icons
+                    .add), // The widget that will be displayed as the tap target.
+                title: Text('Add A Flash Card'),
+                description: Text('Tap Here To Create A Flash Card.'),
+                backgroundColor: Colors.deepOrange,
+                targetColor: Colors.white,
+                textColor: Colors.white,
+                child: RaisedButton(
+                  child: Icon(Icons.add),
+                  onPressed: onAddCardPressed,
+                  shape: StadiumBorder(),
+                ));
+            removeCardRaisedButton = DescribedFeatureOverlay(
+              featureId:
+                  'remove_card', // Unique id that identifies this overlay.
+              tapTarget: Icon(Icons
+                  .remove), // The widget that will be displayed as the tap target.
+              title: Text('Remove A Flash Card'),
+              description: Text('Tap Here To Remove A Flash Card.'),
+              backgroundColor: Colors.purple,
+              targetColor: Colors.red,
+              textColor: Colors.white,
+              child: RaisedButton(
+                child: Icon(Icons.remove),
+                color: Colors.red,
+                onPressed: onRemoveCardPressed,
+                shape: CircleBorder(),
+              ),
+            );
+            editCardRaisedButton = DescribedFeatureOverlay(
+              featureId: 'edit_card', // Unique id that identifies this overlay.
+              tapTarget: Icon(Icons
+                  .edit), // The widget that will be displayed as the tap target.
+              title: Text('Edit A Flash Card'),
+              description: Text('Tap Here To Edit A Flash Card.'),
+              backgroundColor: Colors.purple,
+              targetColor: Colors.red,
+              textColor: Colors.white,
+              child: RaisedButton(
+                child: Icon(Icons.edit),
+                color: Colors.red,
+                onPressed: () {
+                  if (selectedDeck != null && selectedDeck.cards.isNotEmpty)
+                    onEditCardPressed(
+                        selectedDeck.cards.elementAt(currentIndex));
+                },
+                shape: CircleBorder(),
+              ),
+            );
 
-                                  List<Color> colors = [
-                                    Colors.teal,
-                                    Colors.orange,
-                                    Colors.grey,
-                                    Colors.redAccent,
-                                    Colors.indigoAccent,
-                                    Colors.cyan,
-                                    Colors.pinkAccent,
-                                    Colors.lightBlue,
-                                    Colors.lightGreen,
-                                    Colors.amber
-                                  ];
-
-                                  bool selected = selectedDeck.uid == e.uid;
-
-                                  return FilterChip(
-                                      selectedColor: colors.elementAt(index),
-                                      backgroundColor: colors
-                                          .elementAt(index)
-                                          .withOpacity(0.8),
-                                      selected: selected,
-                                      label: Text(e.title),
-                                      onSelected: (val) {
-                                        setState(() {
-                                          if (val == true) {
-                                            DeckBloc.instance.selectDeck(e.uid);
-                                          }
-                                        });
-                                      });
-                                }).toList(),
-                                ActionChip(
-                                    label: Icon(Icons.add),
-                                    onPressed: onNewDeckPressed),
-                              ],
-                              spacing: 8,
-                            );
+            return Scaffold(
+              key: scaffoldKey,
+              appBar: AppBar(
+                actions: [
+                  IconButton(
+                      icon: Icon(Icons.delete_forever),
+                      onPressed: onDeleteDeckPressed),
+                  IconButton(
+                      icon: Icon(Icons.edit),
+                      onPressed: () {
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => DeckEditPage()));
+                      }),
+                  IconButton(
+                      icon: Icon(Icons.play_arrow),
+                      onPressed: () {
+                        DeckBloc.instance.deck.first.then((deck) {
+                          if (deck.cards.isNotEmpty)
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => DeckPlayPage(
+                                          deck: deck,
+                                        )));
+                          else {
+                            scaffoldKey.currentState.hideCurrentSnackBar();
+                            scaffoldKey.currentState.showSnackBar(SnackBar(
+                              content: Text('${deck.title} Is Empty'),
+                              action: SnackBarAction(
+                                label: 'OK',
+                                onPressed: () => scaffoldKey.currentState
+                                    .hideCurrentSnackBar(),
+                              ),
+                            ));
                           }
-
-                          return Container();
-                        },
+                        });
+                      }),
+                ],
+                elevation: 0,
+              ),
+              backgroundColor: Colors.black,
+              body: Column(
+                children: [
+                  if (!snapshot.hasData)
+                    Container(
+                      height: 240,
+                      child: Center(
+                        child: Text(
+                          'No Deck Found',
+                          style: TextStyle(color: Colors.white60),
+                        ),
                       ),
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    ))
-              ],
-            ),
-            resizeToAvoidBottomInset: false,
-          );
-        }
+                    ),
+                  if (snapshot.hasData && selectedDeck.cards.isEmpty)
+                    Center(
+                        child: Container(
+                            height: 240,
+                            child: Center(
+                              child: Text(
+                                'No Flash Card Found in ${selectedDeck.title}',
+                                style: TextStyle(color: Colors.white60),
+                              ),
+                            ))),
+                  if (snapshot.hasData && selectedDeck.cards.isNotEmpty)
+                    CustomCarouselSlider(
+                      cards: selectedDeck.cards,
+                      onPageChanged: (index) {
+                        currentIndex = index;
+                      },
+                    ),
+                  Padding(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        removeCardRaisedButton,
+                        addCardRaisedButton,
+                        editCardRaisedButton,
+                      ],
+                    ),
+                    padding: EdgeInsets.all(12),
+                  ),
+                  Spacer(),
+                  Container(
+                      width: double.infinity,
+                      child: Padding(
+                        child: decksSnapshot.hasData
+                            ? Wrap(
+                                alignment: WrapAlignment.start,
+                                children: [
+                                  ...decks.map((e) {
+                                    int index, i = 0;
 
-        return Container(
-          color: Colors.black,
+                                    do {
+                                      index = int.tryParse(e.uid[i++]);
+                                    } while (index == null);
+
+                                    List<Color> colors = [
+                                      Colors.teal,
+                                      Colors.orange,
+                                      Colors.grey,
+                                      Colors.redAccent,
+                                      Colors.indigoAccent,
+                                      Colors.cyan,
+                                      Colors.pinkAccent,
+                                      Colors.lightBlue,
+                                      Colors.lightGreen,
+                                      Colors.amber
+                                    ];
+
+                                    bool selected = selectedDeck.uid == e.uid;
+
+                                    return FilterChip(
+                                        selectedColor: colors.elementAt(index),
+                                        backgroundColor: colors
+                                            .elementAt(index)
+                                            .withOpacity(0.8),
+                                        selected: selected,
+                                        label: Text(e.title),
+                                        onSelected: (val) {
+                                          setState(() {
+                                            if (val == true) {
+                                              DeckBloc.instance
+                                                  .selectDeck(e.uid);
+                                            }
+                                          });
+                                        });
+                                  }).toList(),
+                                  addDeckRaisedButton
+                                ],
+                                spacing: 8,
+                              )
+                            : Container(),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ))
+                ],
+              ),
+              resizeToAvoidBottomInset: false,
+            );
+          },
         );
       },
     );
@@ -360,6 +428,86 @@ class _MainPageState extends State<MainPage> {
                     )),
               ],
             ),
+          ),
+        );
+      },
+      transitionBuilder: (_, anim, __, child) {
+        return SlideTransition(
+          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(anim),
+          child: child,
+        );
+      },
+    );
+  }
+
+  void onEditCardPressed(FlashCard card) {
+    showGeneralDialog(
+      barrierLabel: "Barrier",
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.9),
+      transitionDuration: Duration(milliseconds: 300),
+      context: context,
+      pageBuilder: (_, __, ___) {
+        final titleEditingController = TextEditingController();
+        final contentEditingController = TextEditingController();
+
+        titleEditingController.text = card.title;
+        contentEditingController.text = card.content;
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: Column(
+            children: [
+              Container(
+                height: 240,
+                //child: SizedBox.expand(child: FlutterLogo()),
+                margin: EdgeInsets.only(top: 48, left: 12, right: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(0),
+                ),
+                child: Column(
+                  children: <Widget>[
+                    Padding(
+                        padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                        child: Material(
+                            color: Colors.transparent,
+                            child: TextField(
+                              controller: titleEditingController,
+                              decoration: InputDecoration(labelText: 'Title'),
+                              style: TextStyle(fontWeight: FontWeight.w800),
+                            ))),
+                    Padding(
+                        padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                        child: Material(
+                            color: Colors.transparent,
+                            child: TextField(
+                              controller: contentEditingController,
+                              decoration: InputDecoration(labelText: 'Content'),
+                              minLines: 4,
+                              maxLines: 5,
+                            ))),
+                  ],
+                ),
+              ),
+              Padding(
+                  padding: EdgeInsets.only(top: 12, left: 24, right: 24),
+                  child: RaisedButton(
+                    child: Icon(Icons.check),
+                    shape: StadiumBorder(),
+                    onPressed: () {
+                      var title = titleEditingController.text;
+                      var content = contentEditingController.text;
+
+                      card.title = title;
+                      card.content = content;
+
+                      DeckBloc.instance.editCard(card);
+
+                      Navigator.pop(context);
+                    },
+                  )),
+            ],
           ),
         );
       },

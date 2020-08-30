@@ -13,6 +13,7 @@ class DeckBloc {
 
   DeckBloc._();
 
+  final _isFirstTimeFetcher = BehaviorSubject<bool>();
   final _decksFetcher = BehaviorSubject<List<Deck>>();
   final _singleDeckFetcher = BehaviorSubject<Deck>();
 
@@ -21,9 +22,20 @@ class DeckBloc {
 
   Stream<List<Deck>> get decks => _decksFetcher.stream;
   Stream<Deck> get deck => _singleDeckFetcher.stream;
+  Stream<bool> get isFirstTime => _isFirstTimeFetcher.stream;
 
   void init() async {
     var uids = <String>[];
+
+    var exists = await Hive.boxExists(deckUidsKey);
+
+    if (!exists) {
+      var appDocDir = await getApplicationDocumentsDirectory();
+      Hive.init(appDocDir.path);
+      _isFirstTimeFetcher.sink.add(true);
+    } else {
+      _isFirstTimeFetcher.sink.add(false);
+    }
 
     var decksRefBox = await Hive.openBox(deckUidsKey);
     print(decksRefBox.values);
@@ -44,6 +56,8 @@ class DeckBloc {
             .add(decks..sort((a, b) => a.timeStamp.compareTo(b.timeStamp)));
       });
     }
+
+    print('im here: ${decks..sort()}');
 
     _decksFetcher.sink
         .add(decks..sort((a, b) => a.timeStamp.compareTo(b.timeStamp)));
@@ -140,19 +154,10 @@ class DeckBloc {
     print('The title is $title');
     var deck = Deck.create(title: title);
 
-    var exists = await Hive.boxExists('deckUids');
+    var decksRefBox = await Hive.openBox(deckUidsKey);
+    decksRefBox.add(deck.uid);
 
-    if (!exists) {
-      var appDocDir = await getApplicationDocumentsDirectory();
-      Hive.init(appDocDir.path);
-      var decksRefBox = await Hive.openBox('deckUids');
-      decksRefBox.add(deck.uid);
-    } else {
-      var decksRefBox = await Hive.openBox('deckUids');
-      decksRefBox.add(deck.uid);
-    }
-
-    exists = await Hive.boxExists(deck.uid);
+    var exists = await Hive.boxExists(deck.uid);
 
     if (!exists) {
       Hive.openBox(deck.uid).then((box) {
@@ -189,6 +194,7 @@ class DeckBloc {
       }
 
       decks.remove(deck);
+      //decks.removeWhere((element) => element.uid == deck.uid);
       deck.delete();
       Hive.openBox(deckUidsKey).then((box) {
         print('deleting ${deck.uid}');
@@ -212,8 +218,13 @@ class DeckBloc {
     });
   }
 
+  void skipSpotlight() {
+    _isFirstTimeFetcher.sink.add(false);
+  }
+
   dispose() {
     _decksFetcher.close();
     _singleDeckFetcher.close();
+    _isFirstTimeFetcher.close();
   }
 }

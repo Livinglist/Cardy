@@ -58,4 +58,13 @@ class Deck extends HiveObject {
   void removeAt(int index) {
     cards.removeAt(index);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (other is Deck && other.uid == this.uid) return true;
+    return false;
+  }
+
+  @override
+  int get hashCode => uid.hashCode;
 }

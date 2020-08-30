@@ -1,3 +1,4 @@
+import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flash_card/ui/main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
         builder: (_, snapshot) {
           if (snapshot.hasData) {
             Hive.init(snapshot.data.path);
-            return MainPage();
+            return FeatureDiscovery(child: MainPage());
           }
           return Container(color: Colors.black);
         },

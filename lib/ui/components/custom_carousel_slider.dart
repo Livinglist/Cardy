@@ -47,6 +47,15 @@ class CustomCarouselSlider extends StatelessWidget {
                               ),
                             )),
                         Positioned(
+                            top: 50,
+                            left: 18,
+                            right: 18,
+                            child: Container(
+                                width: MediaQuery.of(context).size.width,
+                                child: Divider(
+                                  height: 0,
+                                ))),
+                        Positioned(
                             top: 64,
                             left: 18,
                             right: 18,
