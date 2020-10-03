@@ -114,7 +114,7 @@ class _DeckEditPageState extends State<DeckEditPage> {
       barrierLabel: "Barrier",
       barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.9),
-      transitionDuration: Duration(milliseconds: 300),
+      transitionDuration: Duration(milliseconds: 800),
       context: context,
       pageBuilder: (_, __, ___) {
         final titleEditingController = TextEditingController();
@@ -195,7 +195,7 @@ class _DeckEditPageState extends State<DeckEditPage> {
         barrierLabel: "Barrier",
         barrierDismissible: true,
         barrierColor: Colors.black.withOpacity(0.5),
-        transitionDuration: Duration(milliseconds: 300),
+        transitionDuration: Duration(milliseconds: 800),
         context: context,
         pageBuilder: (_, __, ___) {
           final textEditingController = TextEditingController();
