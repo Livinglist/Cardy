@@ -1,3 +1,4 @@
+import 'package:flash_card/ui/components/sping_curve.dart';
 import 'package:flutter/material.dart';
 import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/scheduler.dart';
@@ -51,28 +52,21 @@ class _MainPageState extends State<MainPage> {
           builder: (_, AsyncSnapshot<Deck> snapshot) {
             selectedDeck = snapshot.data;
 
-            Widget addDeckRaisedButton,
-                addCardRaisedButton,
-                removeCardRaisedButton,
-                editCardRaisedButton;
+            Widget addDeckRaisedButton, addCardRaisedButton, removeCardRaisedButton, editCardRaisedButton;
 
             addDeckRaisedButton = DescribedFeatureOverlay(
               featureId: 'add_deck', // Unique id that identifies this overlay.
-              tapTarget: Icon(Icons
-                  .add), // The widget that will be displayed as the tap target.
+              tapTarget: Icon(Icons.add), // The widget that will be displayed as the tap target.
               title: Text('Create An Deck'),
               description: Text('Tap Here To Create An New Deck.'),
               backgroundColor: Colors.blueGrey,
               targetColor: Colors.white,
               textColor: Colors.white,
-              child: ActionChip(
-                  label: Icon(Icons.add), onPressed: onNewDeckPressed),
+              child: ActionChip(label: Icon(Icons.add), onPressed: onNewDeckPressed),
             );
             addCardRaisedButton = DescribedFeatureOverlay(
-                featureId:
-                    'add_card', // Unique id that identifies this overlay.
-                tapTarget: Icon(Icons
-                    .add), // The widget that will be displayed as the tap target.
+                featureId: 'add_card', // Unique id that identifies this overlay.
+                tapTarget: Icon(Icons.add), // The widget that will be displayed as the tap target.
                 title: Text('Add A Flashcard'),
                 description: Text('Tap Here To Create A Flashcard.'),
                 backgroundColor: Colors.deepOrange,
@@ -84,10 +78,8 @@ class _MainPageState extends State<MainPage> {
                   shape: StadiumBorder(),
                 ));
             removeCardRaisedButton = DescribedFeatureOverlay(
-              featureId:
-                  'remove_card', // Unique id that identifies this overlay.
-              tapTarget: Icon(Icons
-                  .remove), // The widget that will be displayed as the tap target.
+              featureId: 'remove_card', // Unique id that identifies this overlay.
+              tapTarget: Icon(Icons.remove), // The widget that will be displayed as the tap target.
               title: Text('Remove A Flashcard'),
               description: Text('Tap Here To Remove A Flashcard.'),
               backgroundColor: Colors.purple,
@@ -102,8 +94,7 @@ class _MainPageState extends State<MainPage> {
             );
             editCardRaisedButton = DescribedFeatureOverlay(
               featureId: 'edit_card', // Unique id that identifies this overlay.
-              tapTarget: Icon(Icons
-                  .edit), // The widget that will be displayed as the tap target.
+              tapTarget: Icon(Icons.edit), // The widget that will be displayed as the tap target.
               title: Text('Edit A Flashcard'),
               description: Text('Tap Here To Edit A Flashcard.'),
               backgroundColor: Colors.purple,
@@ -113,9 +104,7 @@ class _MainPageState extends State<MainPage> {
                 child: Icon(Icons.edit),
                 color: Colors.red,
                 onPressed: () {
-                  if (selectedDeck != null && selectedDeck.cards.isNotEmpty)
-                    onEditCardPressed(
-                        selectedDeck.cards.elementAt(currentIndex));
+                  if (selectedDeck != null && selectedDeck.cards.isNotEmpty) onEditCardPressed(selectedDeck.cards.elementAt(currentIndex));
                 },
                 shape: CircleBorder(),
               ),
@@ -125,9 +114,7 @@ class _MainPageState extends State<MainPage> {
               key: scaffoldKey,
               appBar: AppBar(
                 actions: [
-                  IconButton(
-                      icon: Icon(Icons.delete_forever),
-                      onPressed: onDeleteDeckPressed),
+                  IconButton(icon: Icon(Icons.delete_forever), onPressed: onDeleteDeckPressed),
                   IconButton(
                       icon: Icon(Icons.edit),
                       onPressed: () {
@@ -137,14 +124,12 @@ class _MainPageState extends State<MainPage> {
                             content: Text('No Deck Found'),
                             action: SnackBarAction(
                               label: 'OK',
-                              onPressed: () => scaffoldKey.currentState
-                                  .hideCurrentSnackBar(),
+                              onPressed: () => scaffoldKey.currentState.hideCurrentSnackBar(),
                             ),
                           ));
                           return;
                         }
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => DeckEditPage()));
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => DeckEditPage()));
                       }),
                   IconButton(
                       icon: Icon(Icons.play_arrow),
@@ -155,8 +140,7 @@ class _MainPageState extends State<MainPage> {
                             content: Text('No Deck Found'),
                             action: SnackBarAction(
                               label: 'OK',
-                              onPressed: () => scaffoldKey.currentState
-                                  .hideCurrentSnackBar(),
+                              onPressed: () => scaffoldKey.currentState.hideCurrentSnackBar(),
                             ),
                           ));
                           return;
@@ -175,8 +159,7 @@ class _MainPageState extends State<MainPage> {
                               content: Text('${deck.title} Is Empty'),
                               action: SnackBarAction(
                                 label: 'OK',
-                                onPressed: () => scaffoldKey.currentState
-                                    .hideCurrentSnackBar(),
+                                onPressed: () => scaffoldKey.currentState.hideCurrentSnackBar(),
                               ),
                             ));
                           }
@@ -258,16 +241,13 @@ class _MainPageState extends State<MainPage> {
 
                                     return FilterChip(
                                         selectedColor: colors.elementAt(index),
-                                        backgroundColor: colors
-                                            .elementAt(index)
-                                            .withOpacity(0.8),
+                                        backgroundColor: colors.elementAt(index).withOpacity(0.8),
                                         selected: selected,
                                         label: Text(e.title),
                                         onSelected: (val) {
                                           setState(() {
                                             if (val == true) {
-                                              DeckBloc.instance
-                                                  .selectDeck(e.uid);
+                                              DeckBloc.instance.selectDeck(e.uid);
                                             }
                                           });
                                         });
@@ -277,8 +257,7 @@ class _MainPageState extends State<MainPage> {
                                 spacing: 8,
                               )
                             : Container(),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       ))
                 ],
               ),
@@ -373,8 +352,7 @@ class _MainPageState extends State<MainPage> {
                       var title = titleEditingController.text;
                       var content = contentEditingController.text;
 
-                      var card =
-                          FlashCard.create(title: title, content: content);
+                      var card = FlashCard.create(title: title, content: content);
 
                       DeckBloc.instance.addCard(card);
 
@@ -387,7 +365,7 @@ class _MainPageState extends State<MainPage> {
       },
       transitionBuilder: (_, anim, __, child) {
         return SlideTransition(
-          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(anim),
+          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(CurvedAnimation(parent: anim, curve: SpringCurve.underDamped)),
           child: child,
         );
       },
@@ -413,9 +391,7 @@ class _MainPageState extends State<MainPage> {
             title: Text('Delete ${selectedDeck.title}'),
             content: Text('Confirm deleting ${selectedDeck.title}?'),
             actions: [
-              FlatButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel')),
+              FlatButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
               FlatButton(
                   onPressed: () {
                     DeckBloc.instance.deleteDeck(selectedDeck).then((nextDeck) {
@@ -479,7 +455,7 @@ class _MainPageState extends State<MainPage> {
       },
       transitionBuilder: (_, anim, __, child) {
         return SlideTransition(
-          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(anim),
+          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(CurvedAnimation(parent: anim, curve: SpringCurve.underDamped)),
           child: child,
         );
       },
@@ -559,7 +535,7 @@ class _MainPageState extends State<MainPage> {
       },
       transitionBuilder: (_, anim, __, child) {
         return SlideTransition(
-          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(anim),
+          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(CurvedAnimation(parent: anim, curve: SpringCurve.underDamped)),
           child: child,
         );
       },

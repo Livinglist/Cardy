@@ -2,6 +2,8 @@ import 'package:flash_card/bloc/deck_bloc.dart';
 import 'package:flash_card/ui/components/flash_card_view.dart';
 import 'package:flutter/material.dart';
 
+import 'components/sping_curve.dart';
+
 class DeckEditPage extends StatefulWidget {
   @override
   _DeckEditPageState createState() => _DeckEditPageState();
@@ -180,7 +182,7 @@ class _DeckEditPageState extends State<DeckEditPage> {
       },
       transitionBuilder: (_, anim, __, child) {
         return SlideTransition(
-          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(anim),
+          position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(CurvedAnimation(parent: anim, curve: SpringCurve.underDamped)),
           child: child,
         );
       },
@@ -237,8 +239,7 @@ class _DeckEditPageState extends State<DeckEditPage> {
         },
         transitionBuilder: (_, anim, __, child) {
           return SlideTransition(
-            position:
-                Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(anim),
+            position: Tween(begin: Offset(0, 1), end: Offset(0, 0)).animate(CurvedAnimation(parent: anim, curve: SpringCurve.underDamped)),
             child: child,
           );
         },
